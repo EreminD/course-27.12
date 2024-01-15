@@ -1,6 +1,6 @@
 package ru.inno.course.basics;
 
-public class Lesson1 {
+public class PrimitiveTypes {
 
     public static void main(String[] args) {
 
