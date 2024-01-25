@@ -88,6 +88,7 @@ public class GarageTask {
 
         for (var i = 0; i < garage.length; i++) {
             Car currentCar = garage[i];
+            currentCar.passengers[0] = "Mike";
             System.out.println(currentCar.color + " " + currentCar.brand+"-"+ currentCar.model);
         }
 
