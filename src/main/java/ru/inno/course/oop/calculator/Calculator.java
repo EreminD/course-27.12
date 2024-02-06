@@ -14,7 +14,7 @@ public interface Calculator {
     public int mul(int a, int b);
 
     /** Делит a на b */
-    public double div(int a, int b);
+    public double div(int a, int b) throws Exception;
 
     /** Находит среднее значение из переданной коллекции. Сумма всех чисел, разделенная на количество */
     public double avg(Collection<Integer> nums);
