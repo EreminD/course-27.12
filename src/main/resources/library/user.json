@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Tester",
+    "age": 20,
+    "isOnline": true,
+    "promocode": null
+  },
+  {
+    "name": "Dev",
+    "age": 30,
+    "isOnline": true,
+    "promocode": "java"
+  },
+  {
+    "name": "Manager",
+    "age": 17,
+    "isOnline": true,
+    "promocode": "school is cool."
+  }
+]

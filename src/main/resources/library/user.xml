@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<users>
+    <user>
+        <name>Tester</name>
+        <age>20</age>
+        <isOnline>true</isOnline>
+    </user>
+    <user>
+        <name>Dev</name>
+        <age>30</age>
+        <isOnline>true</isOnline>
+        <promocode>java</promocode>
+    </user>
+    <user>
+        <name>manager</name>
+        <age>17</age>
+        <isOnline>true</isOnline>
+        <promocode>school is cool.</promocode>
+    </user>
+</users>

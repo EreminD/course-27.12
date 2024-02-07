@@ -1,9 +1,6 @@
 package ru.inno.course.basics.date;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 
 public class Playground {
@@ -61,7 +58,6 @@ public class Playground {
 
         LocalDate date = LocalDate.parse(myDate, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
         System.out.println("date = " + date.plusDays(1));
-
 
     }
 }

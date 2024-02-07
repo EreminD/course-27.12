@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<book isbn="1234-3252343-2135">
+    <title>Золотой теленок</title>
+    <author_name>И. Ильф и Е.Петров</author_name>
+    <price>199</price>
+    <rating>0</rating>
+</book>
