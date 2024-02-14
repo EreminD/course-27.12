@@ -8,14 +8,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class PlayerServiceJUnitTest {
-
-    private ObjectMapper mapper = new ObjectMapper();
-    private Path dataFile = Path.of("./data.json");
     private PlayerService service;
+    private final Path dataFile = Path.of("./data.json");
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -23,75 +22,143 @@ public class PlayerServiceJUnitTest {
         service = new PlayerServiceImpl();
     }
 
-    @AfterEach
-    public void tearDown() throws IOException {
-        Files.deleteIfExists(dataFile);
-    }
-
     @Test
-    @Tags({@Tag("добавление"), @Tag("чистаяСистема")})
+    @Tags({@Tag("create"), @Tag("positive")})
     @DisplayName("Создать первого игрока (файла не существует)")
     public void newPlayerCreation() throws IOException {
-        // 2. Создать игрока
         int alexId = service.createPlayer("Alex");
-        // 3. Прочитать содержимое файла
-        List<Player> playersFromFile = mapper.readValue(dataFile.toFile(), new TypeReference<List<Player>>() {
-        });
-        // 4. Проверить, что в файле есть наш игрок
+        List<Player> playersFromFile = getPlayersFromStorage();
+
         Player playerToBe = service.getPlayerById(alexId);
         Player playerAsIs = playersFromFile.get(0);
-
         assertEquals(playerToBe, playerAsIs);
-        assertEquals(playersFromFile.size(), 3);
+        assertEquals(playersFromFile.size(), 1);
     }
 
     @Test
-    @Tag("добавление")
+    @Tags({@Tag("create"), @Tag("positive")})
     @DisplayName("Добавить нового игрока в существующую коллекцию")
     public void addPlayerToCollection() throws IOException {
         service.createPlayer("Billy");
         service.createPlayer("Willy");
         service.createPlayer("Dilly");
-        // 1. Проверить, что файл есть и он не пустой. -> запомнить, сколько было игроков
-        List<Player> listBeforeAdd = mapper.readValue(Path.of("wrong PATH").toFile(), new TypeReference<List<Player>>() {
-        });
+        List<Player> listBeforeAdd = getPlayersFromStorage();
         Player billy = listBeforeAdd.get(0);
 
-        // 2. Создать нового игрока
         int martaId = service.createPlayer("Marta");
+        List<Player> listAfterAdd = getPlayersFromStorage();
 
-        // 3. Прочитать содержимое фала -> список игроков
-        List<Player> listAfterAdd = mapper.readValue(dataFile.toFile(), new TypeReference<List<Player>>() {
-        });
-
-        // 4. Проверить, что список стал на 1 больше
-        System.out.println(listAfterAdd.size() == listBeforeAdd.size() + 1);
-        // 5. Проверить, что в списке ест старый и новый игроки.
         Player marta = service.getPlayerById(martaId);
+        assertEquals(listBeforeAdd.size() + 1, listAfterAdd.size());
         assertTrue(listAfterAdd.contains(marta));
         assertTrue(listAfterAdd.contains(billy));
     }
 
     @Test
     @DisplayName("Удалить игрока из списка")
+    @Tags({@Tag("delete"), @Tag("positive")})
     public void deletePlayer() throws IOException {
-        // 1. Посмотреть список игроков --> сохранить размер
         service.createPlayer("Kenny");
+        List<Player> listBeforeDelete = getPlayersFromStorage();
 
-        List<Player> listBeforeDelete = mapper.readValue(dataFile.toFile(), new TypeReference<List<Player>>() {
-        });
-        // 2. id любого (первого) игрока
         Player willBeDeleted = listBeforeDelete.get(0);
-        // 3. Удалить
         Player deleted = service.deletePlayer(willBeDeleted.getId());
-        // 4. Проверить, что размер файла стал на 1 меньше
-        List<Player> listAfterDelete = mapper.readValue(dataFile.toFile(), new TypeReference<List<Player>>() {
-        });
 
+        List<Player> listAfterDelete = getPlayersFromStorage();
         assertEquals(listBeforeDelete.size() - 1, listAfterDelete.size());
-
-        // 5. Список НЕ содержит нашего игрока
         assertFalse(listAfterDelete.contains(deleted));
-
     }
+
+    @Test
+    @Tags({@Tag("delete"), @Tag("negative")})
+    @DisplayName("Удалить игрока из списка (игрока не существует)")
+    public void deleteNonExistPlayer() throws IOException {
+        service.createPlayer("Kenny");
+        int notExistedPlayer = Integer.MAX_VALUE;
+
+        // 1. Посмотреть список игроков --> сохранить размер
+        List<Player> listBeforeDelete = getPlayersFromStorage();
+
+        // 3. Удалить несуществующего игрока -> проверить, что выпало исключение
+        assertThrows(NoSuchElementException.class, () -> service.deletePlayer(notExistedPlayer));
+
+        // 4. Проверить, что размер файла не изменился
+        List<Player> listAfterDelete = getPlayersFromStorage();
+        assertEquals(listBeforeDelete, listAfterDelete);
+    }
+
+    @Test
+    @DisplayName("Накинуть очков игроку - проверить, что состояние пересохранилось")
+    @Tags({@Tag("update"), @Tag("positive")})
+    public void setPoints() throws IOException {
+        int kennyId = service.createPlayer("Kenny");
+        int points = 100;
+        service.addPoints(kennyId, points);
+
+        // 4. Проверить, что размер файла не изменился
+        List<Player> list = getPlayersFromStorage();
+        Player kenny = list.get(0);
+        assertEquals(points, kenny.getPoints());
+    }
+
+    @Test
+    @DisplayName("Запросить данные игрока по id")
+    @Tags({@Tag("get"), @Tag("positive")})
+    public void getPlayerById() throws IOException {
+        createStorage("[{\"id\":1,\"nick\":\"Kenny\",\"points\":0,\"online\":true}]");
+        service = new PlayerServiceImpl();
+        Player kenny = service.getPlayerById(1);
+        assertEquals("Kenny", kenny.getNick());
+    }
+
+    @Test
+    @DisplayName("Запросить данные игрока по id (игрока не существует)")
+    @Tags({@Tag("get"), @Tag("negative")})
+    public void getPlayerByIdNotExists() throws IOException {
+        createStorage("[{\"id\":1,\"nick\":\"Kenny\",\"points\":0,\"online\":true}]");
+        assertThrows(NoSuchElementException.class, () -> service.getPlayerById(2));
+    }
+
+    @Test
+    @DisplayName("Создание дубликата – не должно быть одинаковых ников")
+    @Tags({@Tag("create"), @Tag("negative")})
+    public void createDuplicateUser() {
+        String nickname = "Kenny";
+        service.createPlayer(nickname);
+        assertThrows(IllegalArgumentException.class, () -> service.createPlayer(nickname));
+        assertEquals(1, service.getPlayers().size());
+    }
+
+    @Test
+    @Tags({@Tag("create"), @Tag("delete"), @Tag("positive")})
+    @DisplayName("Удалить и создать с тем же ником.")
+    public void recreateUser() {
+        String nickname = "Kenny";
+        int kennyId = service.createPlayer(nickname);
+
+        service.deletePlayer(kennyId);
+        int newKennyId = service.createPlayer(nickname);
+
+        assertNotEquals(newKennyId, kennyId);
+        assertEquals(1, service.getPlayers().size());
+    }
+
+    @Test
+    @Tags({@Tag("update"), @Tag("negative")})
+    @DisplayName("Добавить очков несуществующему игроку")
+    public void addPointsToNotExistUser() {
+        assertThrows(NoSuchElementException.class, () -> service.addPoints(99, 100));
+    }
+
+    // вспомогательные методы
+    private List<Player> getPlayersFromStorage() throws IOException {
+        return new ObjectMapper().readValue(dataFile.toFile(), new TypeReference<List<Player>>() {
+        });
+    }
+
+    private void createStorage(String content) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(dataFile.toFile(), mapper.readTree(content));
+    }
+
 }
