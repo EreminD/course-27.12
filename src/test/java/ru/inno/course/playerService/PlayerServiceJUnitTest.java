@@ -3,6 +3,8 @@ package ru.inno.course.playerService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,11 +24,13 @@ public class PlayerServiceJUnitTest {
         service = new PlayerServiceImpl();
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"Alex", "Алекс", " ", "alex@mail.ru", "1234lex"})
+    @NullAndEmptySource
     @Tags({@Tag("create"), @Tag("positive")})
     @DisplayName("Создать первого игрока (файла не существует)")
-    public void newPlayerCreation() throws IOException {
-        int alexId = service.createPlayer("Alex");
+    public void newPlayerCreation(String nickname) throws IOException {
+        int alexId = service.createPlayer(nickname);
         List<Player> playersFromFile = getPlayersFromStorage();
 
         Player playerToBe = service.getPlayerById(alexId);
@@ -101,6 +105,16 @@ public class PlayerServiceJUnitTest {
         assertEquals(points, kenny.getPoints());
     }
 
+
+    @ParameterizedTest(name = "{index} Значение параметра {0} ->{1}")
+    @ArgumentsSource(FakerProvider.class)
+    @Tags({@Tag("update"), @Tag("negative")})
+    @DisplayName("Негативные тесты на добавление очков")
+    public void testPoints(String nick, int point) {
+        int kennyId = service.createPlayer(nick);
+        assertThrows(IllegalArgumentException.class, () -> service.addPoints(kennyId, point));
+    }
+
     @Test
     @DisplayName("Запросить данные игрока по id")
     @Tags({@Tag("get"), @Tag("positive")})
@@ -109,6 +123,16 @@ public class PlayerServiceJUnitTest {
         service = new PlayerServiceImpl();
         Player kenny = service.getPlayerById(1);
         assertEquals("Kenny", kenny.getNick());
+    }
+
+    @ParameterizedTest
+    @DisplayName("Загрузка хранилища из файла")
+    @ArgumentsSource(JsonContentProvider.class)
+    @Tags({@Tag("get"), @Tag("positive")})
+    public void getDataFromFile(String fileContent, int expectedSize) throws IOException {
+        createStorage(fileContent);
+        service = new PlayerServiceImpl();
+        assertEquals(expectedSize, service.getPlayers().size());
     }
 
     @Test

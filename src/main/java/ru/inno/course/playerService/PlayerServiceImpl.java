@@ -48,6 +48,7 @@ public class PlayerServiceImpl implements PlayerService {
 
         Player p = this.players.remove(id);
         saveToFile();
+        nicknames.remove(p.getNick());
         return p;
     }
 
@@ -57,6 +58,9 @@ public class PlayerServiceImpl implements PlayerService {
             throw new NoSuchElementException("No such user: " + playerId);
         }
 
+        if (points < 1){
+            throw new IllegalArgumentException("Количество очков должно быть больше нуля" + points);
+        }
         Player player = this.players.get(playerId);
         int currentPoints = player.getPoints();
         int newPoints = currentPoints + points;
